@@ -1,0 +1,1723 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: e425814d70eb43e1911a0b3cb0584564
+      name: Templates/Air
+  templates:
+    - uuid: ce344316b97d452bb8c713b87225ba9d
+      template: 'ACRD602 InRow RD Discovery'
+      name: 'ACRD602 InRow RD Discovery'
+      description: 'Data discovery and trigger template for APC ACRD602 air conditioner (https://www.se.com/sa/en/product/ACRD602). Created using Zabbix 6.4 version.'
+      groups:
+        - name: Templates/Air
+      discovery_rules:
+        - uuid: 9d18b97b10ac4246af3208e079fe099b
+          name: 'Unit about'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, 1.3.6.1.4.1.318.1.1.27.1.3.2.1.2.1, {#SNMPVALUE}, 1.3.6.1.4.1.318.1.1.27.1.3.2.1.3.1]'
+          key: air.about.unit
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 89e1de9c010145bab0c43c91ba9da7a2
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.3.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.about.[{#SNMPVALUE}]'
+              history: 7d
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: DISCARD_UNCHANGED
+                  parameters:
+                    - ''
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = [];
+                  
+                      data.forEach(function(item) {
+                          // Проверяем, что имя уникально
+                          if (!uniqueNames[item['{#SNMPNAME}']]) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}']
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 49a2e5520a09467d8c8b92ae88622660
+          name: 'Compressor run'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.compressor.run
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: d468f69e964a4f8f8ba727ae151c2e23
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.compressor.run.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '!weeks'
+              description: 'Compressor Service Alarm Interval 300 weeks'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /24)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /7)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return(Math.round(value* 100 / 100))'
+              trigger_prototypes:
+                - uuid: 26d18bf1bca3486eae3b5d4d14b0204a
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.compressor.run.[{#SNMPINDEX}])>=300'
+                  name: '{#SNMPNAME}:{ITEM.LASTVALUE} interval service is required'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  description: 'Compressor Service Alarm Interval 300 weeks'
+                  manual_close: 'YES'
+                - uuid: 7dc277a870344fdea0f7477720f70358
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.compressor.run.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = [];
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "37")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 311df8d546f14eb1883689d1d2f0e000
+          name: 'Condensate pump run'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.condensate.pump
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: d4fc43a5487e4750bf08c1fae58ce335
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.condensate.pump.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '!weeks'
+              description: 'Condensate Pump Service Alarm Interval 52 weeks'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /24)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /7)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return(Math.round(value* 100 / 100))'
+              trigger_prototypes:
+                - uuid: 9e91bb5293724dd390692544ed27bb7c
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.condensate.pump.[{#SNMPINDEX}])>=52'
+                  name: '{#SNMPNAME}:{ITEM.LASTVALUE} interval service is required'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  description: 'Condensate Pump Service Alarm Interval 52 weeks'
+                  manual_close: 'YES'
+                - uuid: d7b19c4e490e4ecf8a851b710244337c
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.condensate.pump.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "39")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: efeb8595a9494d1283a941d6b7472e06
+          name: 'Air filter run'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.filter.run
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: b782489b61b74450a5aae5bea62d4bf9
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.air.filter.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '!weeks'
+              description: 'Air Filter Service Interval 52 weeks'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /24)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /7)'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return(Math.round(value* 100 / 100))'
+              trigger_prototypes:
+                - uuid: 593887900f3243c2ba7092d387dada1c
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.air.filter.[{#SNMPINDEX}])>=52'
+                  name: '{#SNMPNAME}:{ITEM.LASTVALUE} interval service is required'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  description: 'Air Filter Service Interval 52 weeks'
+                  manual_close: 'YES'
+                - uuid: f4cdc3315f3742d1ac828ff52db7bf7c
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.air.filter.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "44")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 32053eaa7ee24cd78e829e8121954dcc
+          name: 'Rack inlet temperature'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.inet.temp
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 8e4041204c4547938eaf4365dd136710
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.temp.inlet.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              description: 'Rack Inlet Threshold - 27 {#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+              trigger_prototypes:
+                - uuid: 94e5bcdc8d1f4f5385ef70912cabb597
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.temp.inlet.[{#SNMPINDEX}])>=27'
+                  name: '{#SNMPNAME} is high: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Rack Inlet Threshold - 27 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: 7676a4909a1d4cc184a72b6e4c31272e
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.temp.inlet.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "31" ||
+                               item['{#SNMPINDEX}'] === "33" ||
+                               item['{#SNMPINDEX}'] === "35")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true;
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 533e53a5233f492b868590e40b7a3b12
+          name: 'Return humidity'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.return.humidity
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 9c5f3657487a4b35955b6c57c2fb95a5
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.humidity.return.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              description: |
+                Return Humidity Low Threshold - 30 {#SNMPUNITS}
+                Return Humidity High Threshold - 70 {#SNMPUNITS}
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+              trigger_prototypes:
+                - uuid: 67819bc0fa95473c94f5bbb497d496ab
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.humidity.return.[{#SNMPINDEX}])>=70'
+                  name: '{#SNMPNAME} is high: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Return Humidity High Threshold - 70 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: 3d614798e3e04a93bc48cab96f5e6541
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.humidity.return.[{#SNMPINDEX}])<=30'
+                  name: '{#SNMPNAME} is low: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Return Humidity Low Threshold - 30 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: e75b1470521744fbb902af1d4c50bead
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.humidity.return.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "11")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: e4e6f77622b44560a1f841f3cef2da82
+          name: 'Return air temperature'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.return.temp
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: bfb70f536829436eb5866cb542dd2c2e
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.temp.return.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              description: 'Return Air Temperature - 40 {#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+              trigger_prototypes:
+                - uuid: a4977e00effd4826acf8a1a1a729b334
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.temp.return.[{#SNMPINDEX}])>=40'
+                  name: '{#SNMPNAME} is high: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Return Air Temperature - 40 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: f40184e9c39f418ba2f028a370cbd187
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.temp.return.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {};
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "9")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 1831b1370bd7433c82070b3519169450
+          name: 'Unit airflow control status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1, {#SNMPDES}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.5.1]'
+          key: air.unit.status.airflow.control
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: e4eed19681bb4a3ab5777dbad635e9b9
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1.{#SNMPINDEX}'
+              key: 'air.unit.status.airflow.control.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              description: 'Under(0), Okay(1), Over(2), NA(3)'
+              valuemap:
+                name: 'Active Flow Control Status'
+              trigger_prototypes:
+                - uuid: 95bde4801908446abb03ec95c7ec17fe
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.status.airflow.control.[{#SNMPINDEX}])<>3'
+                  name: 'The state of active flow control has changed to {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  description: 'Under(0), Okay(1), Over(2), NA(3)'
+                  manual_close: 'YES'
+                - uuid: 276c790baba04863b23dd1cd4b8bfc99
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.status.airflow.control.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "5")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPDES}': item['{#SNMPDES}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: f4e508d70aae465d9a6bf14c28e17aa0
+          name: 'Unit control card temperature status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.control.card.temperature
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 70bdbc40d456479a81c8d0fbc78a38fd
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.card.temp.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /10)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "9")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 89a33a1a16724e3bbad41b5beb1c3cbe
+          name: 'Unit current status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.current
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 4ae262952d744c46b3c57c57e19a8eb7
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.current.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /100)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "4")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: bd739d57d96447ceba4588ec400af7f3
+          name: 'Unit dc link voltage status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.dc.link.voltage
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: dd0ec68addc84f2ab4070af5cc08a275
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.dc.link.voltage.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /1)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "5")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: c72732850b964c818b1ee2c794444a6f
+          name: 'Unit descrete status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1, {#SNMPDES}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.5.1]'
+          key: air.unit.status.descrete
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 16607a7d0fed418e870e3464bd55cd59
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1.{#SNMPINDEX}'
+              key: 'air.unit.discrete.status.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              description: '{#SNMPDES}'
+              valuemap:
+                name: 'Unit Status'
+              trigger_prototypes:
+                - uuid: 5dc82fef12c64003ab49b8be949045bd
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.discrete.status.[{#SNMPINDEX}])<>0'
+                  name: 'The operating condition of the air conditioner has changed to {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: '{#SNMPDES}'
+                  manual_close: 'YES'
+                - uuid: 282e08f342c24c3b968f7aae96d5f513
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.discrete.status.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "1")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPDES}': item['{#SNMPDES}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: d36ab7657a8143879fae0f9013c29aae
+          name: 'Unit metrics Fan Speed/Group Reheat'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.fan.speed.group
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 4145790a801d4e4b9300df5b330cf5a9
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.fan.speed.group.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "5" ||
+                               item['{#SNMPINDEX}'] === "55")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 324a04b60bc047f9b58f844b0aafc7e9
+          name: 'Unit heat sink temperature status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.heat.sink.temperature
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 3a9d73ba12414ff7ac85bc878f7d2a16
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.heat.sink.temp..[{#SNMPINDEX}]'
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /10)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "7")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 9a8c9958f1c941c08ac5864fe62267b3
+          name: 'Unit input status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1, {#SNMPDES}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.5.1]'
+          key: air.unit.status.input
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 1e7f36cd82c0419588a15715772050e7
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1.{#SNMPINDEX}'
+              key: 'air.unit.status.input.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              description: '{#SNMPDES}'
+              valuemap:
+                name: 'Standby Input State'
+              trigger_prototypes:
+                - uuid: 35e064d7ce5a4a149d3917638754e768
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.status.input.[{#SNMPINDEX}])<>0'
+                  name: 'The input signal status in standby mode has changed to {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: AVERAGE
+                  description: '{#SNMPDES}'
+                  manual_close: 'YES'
+                - uuid: 23f23aee112245658b983a3cbd160234
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.status.input.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "3")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPDES}': item['{#SNMPDES}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: c18b608f1e554989b13f7c56b0a037aa
+          name: 'Unit metrics kPa'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.kPa
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 29498f9d570a4626946cc6bceaf62d7d
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.kPa.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "23" ||
+                               item['{#SNMPINDEX}'] === "25")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 2396ed2ed48046489413e2b876fdf0ba
+          name: 'Unit metrics kW'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.kW
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 3a6006a8a37245ff9b10937e2f58cdcc
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.kw.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "12" ||
+                               item['{#SNMPINDEX}'] === "13" ||
+                               item['{#SNMPINDEX}'] === "53" || 
+                               item['{#SNMPINDEX}'] === "54")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true;
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 67e1aef8d80e4abb942fec08436a1a8b
+          name: 'Unit metrics L/s'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.Ls
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: b34a632dbe384dbb802a042af63fe68c
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.ls.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "4" || 
+                               item['{#SNMPINDEX}'] === "52")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 8973349134734661a613bfcff1e9286b
+          name: 'Unit mode status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1, {#SNMPDES}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.5.1]'
+          key: air.unit.status.mode
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: d1a42ae22c2b4d18b5185dbb07b1fa1e
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1.{#SNMPINDEX}'
+              key: 'air.unit.status.mode.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              description: '{#SNMPDES}'
+              valuemap:
+                name: 'Operating Mode'
+              trigger_prototypes:
+                - uuid: 437475462e094616a98ef32e4fe226f8
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.status.mode.[{#SNMPINDEX}])<>0'
+                  name: 'The operating mode of the air conditioner has changed to {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: '{#SNMPDES}'
+                  manual_close: 'YES'
+                - uuid: 9f9e86f150ee4eb182ba9a371b696735
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.status.mode.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "2")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPDES}': item['{#SNMPDES}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: f09bac254de44bd59ce9161af7d69f48
+          name: 'Unit output status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1, {#SNMPDES}, .1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.5.1]'
+          key: air.unit.status.output
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: cd064481d5c54242acb4956c86583e91
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.2.2.1.4.1.{#SNMPINDEX}'
+              key: 'air.unit.status.output.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              description: '{#SNMPDES}'
+              valuemap:
+                name: 'Output State'
+              trigger_prototypes:
+                - uuid: 46e3e9e1f1504ff2b81533d842d2d85b
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.status.output.[{#SNMPINDEX}])<>0'
+                  name: 'The output signal status in standby mode has changed to {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: AVERAGE
+                  description: '{#SNMPDES}'
+                  manual_close: 'YES'
+                - uuid: 55d0c6b5fb9145c0b824955e94984884
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.status.output.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "4")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPDES}': item['{#SNMPDES}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: d00f90d3f4304626837da943bb37aeb1
+          name: 'Unit metrics Pa'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.Pa
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 54eab8a1e0134a0eb3b1e810dbfd6e9b
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.Pa.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 100;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "29")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: ca1ceb7858a94346a3f8d99be05ab591
+          name: 'Unit power status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.power
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: c2247ab6ac8f4d74a70df522d627b00b
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.power.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /100)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "2")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true;
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: bd1e1146f2e9400d9275953ffb841f49
+          name: 'Unit metrics %'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.procent
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: b61899ce9560442298e6629b16d8bad6
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.procent.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "14" || 
+                               item['{#SNMPINDEX}'] === "15" ||
+                  	     item['{#SNMPINDEX}'] === "16" ||
+                  	     item['{#SNMPINDEX}'] === "17" ||
+                  	     item['{#SNMPINDEX}'] === "18" ||
+                  	     item['{#SNMPINDEX}'] === "19" ||
+                  	     item['{#SNMPINDEX}'] === "56" ||
+                  	     item['{#SNMPINDEX}'] === "57" ||
+                  	     item['{#SNMPINDEX}'] === "58" ||
+                  	     item['{#SNMPINDEX}'] === "59" ||
+                               item['{#SNMPINDEX}'] === "60")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: e6f4aa33f5d44474a1e641326faa585d
+          name: 'Unit metrics %RH'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.procent.RH
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 5977e52edf384038a778f4151438e329
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.procentRH.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "11")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: ae677627892b431b8a71800c516e3bb5
+          name: 'Unit metrics run hrs'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.run.hrs
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 665440be5785491aa38ceecb915f17ea
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.run.hours.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '!{#SNMPUNITS}'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "36" || 
+                  			 item['{#SNMPINDEX}'] === "38" ||
+                  			 item['{#SNMPINDEX}'] === "40" ||
+                  			 item['{#SNMPINDEX}'] === "41" ||
+                  			 item['{#SNMPINDEX}'] === "42" ||
+                  			 item['{#SNMPINDEX}'] === "43" ||)) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 2cb10790eddf418b830c281b1a4c0e87
+          name: 'Unit speed status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.speed
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 21d0d0ad8aeb49768177b2da955e1a1f
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.speed.[{#SNMPINDEX}]'
+              history: 14d
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /10)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "1")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: d566629d9d944e74b88c64d55582b905
+          name: 'Unit metrics °C'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1]'
+          key: air.unit.status.temp
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: d85ce7881e4a44e4a2738484a79066a9
+              name: '{#SNMPNAME}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.temp.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "2" || 
+                  			 item['{#SNMPINDEX}'] === "20" ||
+                  			 item['{#SNMPINDEX}'] === "27" ||
+                  			 item['{#SNMPINDEX}'] === "46" ||
+                  			 item['{#SNMPINDEX}'] === "48" ||
+                               item['{#SNMPINDEX}'] === "50")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: b371bf9b4aac44f794bc35164eef4574
+          name: 'Unit voltage status'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1, {#SNMPUNITS}, 1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.4.1]'
+          key: air.unit.status.voltage
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 085ed8d565b346478f43747f04906399
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.6.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.status.voltage.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return (value /10)'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "3")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'] 
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 2986b744b8f14a6882a8a8444a0dadae
+          name: 'Supply humidity'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.supply.humidity
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 0a0b0e7bb52649a3a192e4b67de2757d
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.humidity.supply.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              description: 'Supply Humidity - 60 {#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+              trigger_prototypes:
+                - uuid: e6ec9ae614044f2bbd425f6d39029f26
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.humidity.supply.[{#SNMPINDEX}])>=75'
+                  name: '{#SNMPNAME} is high: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Supply Humidity - 60 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: 423a9750c59a4eebac6e5f1bdc3dbfe3
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.humidity.supply.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "10")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true; 
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              });
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+        - uuid: 3ec9db9fda5e4df2af6bbf0a7b3777b6
+          name: 'Supply air temperature'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPNAME}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.2.1, {#SNMPVALUE}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1, {#SNMPUNITS}, .1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.4.1, {#SNMPNAMETRH}, 1.3.6.1.4.1.318.1.1.27.1.5.1.2.1.2.1]'
+          key: air.unit.supply.temp
+          status: DISABLED
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: e0278b9606b640cebbb7fc7b23a887f5
+              name: '{#SNMPNAME} {#SNMPUNITS}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.27.1.4.1.2.1.3.1.{#SNMPINDEX}'
+              key: 'air.unit.temp.supply.[{#SNMPINDEX}]'
+              history: 14d
+              value_type: FLOAT
+              trends: 90d
+              units: '{#SNMPUNITS}'
+              description: 'Supply Air Temperature - 25 {#SNMPUNITS}'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value / 10;'
+              trigger_prototypes:
+                - uuid: 0275bfcf9f72474ca5ce608831376714
+                  expression: 'last(/ACRD602 InRow RD Discovery/air.unit.temp.supply.[{#SNMPINDEX}])>=25'
+                  name: '{#SNMPNAME} is high: {ITEM.LASTVALUE}'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  description: 'Supply Air Temperature - 25 {#SNMPUNITS}'
+                  manual_close: 'YES'
+                - uuid: 1ac3f2d99a894b41b002e0ae5bd15341
+                  expression: 'nodata(/ACRD602 InRow RD Discovery/air.unit.temp.supply.[{#SNMPINDEX}],5m)=1'
+                  name: '{#SNMPNAME} no data for 5 minutes'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  manual_close: 'YES'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var data = JSON.parse(value);
+                      var uniqueNames = {}; 
+                      var result = []; 
+                  
+                      data.forEach(function(item) {
+                          if (!uniqueNames[item['{#SNMPNAME}']] && 
+                              (item['{#SNMPINDEX}'] === "7")) {
+                              uniqueNames[item['{#SNMPNAME}']] = true;
+                              result.push({
+                                  '{#SNMPINDEX}': item['{#SNMPINDEX}'],
+                                  '{#SNMPNAME}': item['{#SNMPNAME}'],
+                                  '{#SNMPVALUE}': item['{#SNMPVALUE}'],
+                                  '{#SNMPUNITS}': item['{#SNMPUNITS}'],
+                              }); 
+                          }
+                      });
+                  
+                      return JSON.stringify(result);
+                  } catch (error) {
+                      return 'Error: ' + error.message;
+                  }
+      tags:
+        - tag: class
+          value: air
+        - tag: target
+          value: ACRD602
+        - tag: target
+          value: apc
+      valuemaps:
+        - uuid: 619d453350be4d5b8e8af057a78a3475
+          name: 'Active Flow Control Status'
+          mappings:
+            - value: '0'
+              newvalue: Under
+            - value: '1'
+              newvalue: Okay
+            - value: '2'
+              newvalue: Over
+            - value: '3'
+              newvalue: NA
+        - uuid: 2cff7598f35b43abb802bc8f6ac18473
+          name: 'Operating Mode'
+          mappings:
+            - value: '0'
+              newvalue: Standby
+            - value: '1'
+              newvalue: 'On'
+            - value: '2'
+              newvalue: Idle
+            - value: '3'
+              newvalue: Prestart
+            - value: '4'
+              newvalue: Backup
+            - value: '5'
+              newvalue: 'Load Assist'
+        - uuid: 6146a38a3b114dfdbdbaa9fe8cd07eb0
+          name: 'Output State'
+          mappings:
+            - value: '0'
+              newvalue: Open
+            - value: '1'
+              newvalue: Closed
+        - uuid: e2940a2751d5450c893501c2c6ea02e3
+          name: 'Standby Input State'
+          mappings:
+            - value: '0'
+              newvalue: Open
+            - value: '1'
+              newvalue: Closed
+        - uuid: ce9225adefde4f73b2398a937f153196
+          name: 'Unit Status'
+          mappings:
+            - value: '0'
+              newvalue: Standby
+            - value: '1'
+              newvalue: 'On'
