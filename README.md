@@ -1,6 +1,10 @@
 # Zabbix template for monitoring APC ACRD602 air conditioners
 This template is designed for monitoring APC ACRD602 air conditioners using Zabbix. It includes discovery rules, data elements, and triggers to track device status and performance.
 
+## Installation:
+1. import the `zbx_export_templates.yaml` file into your Zabbix.
+2. Configure the necessary parameters and data elements according to your requirements.
+
 ## Key Features:
 - **Version**: 7.0/6.4
 - **Template UUID**: ce344316b97d452bb8c713b87225ba9d
@@ -18,10 +22,6 @@ This template is designed for monitoring APC ACRD602 air conditioners using Zabb
 ## Triggers:
 - Maintenance notifications
 - Notifications of unavailable data
-
-## Installation:
-1. import the `zbx_export_templates.yaml` file into your Zabbix server.
-2. Configure the necessary parameters and data elements according to your requirements.
 
 ## License:
 This template is distributed under the MIT license. Use it at your discretion.
