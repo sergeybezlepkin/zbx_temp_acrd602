@@ -6,7 +6,7 @@ This template is designed for monitoring APC ACRD602 air conditioners using Zabb
 2. Configure the necessary parameters and data elements according to your requirements.
 
 ## Key Features:
-- **Version**: 7.0/6.4
+- **Version**: 7.0
 - **Template UUID**: ce344316b97d452bb8c713b87225ba9d
 - **Description**: Data discovery and triggers template for the APC ACRD602 air conditioner. Created using Zabbix 6.4 version.
 - **Template Groups**: Templates/Air
@@ -16,6 +16,7 @@ This template is designed for monitoring APC ACRD602 air conditioners using Zabb
 - Compressor Status
 - Condensate pump status
 - Inlet air temperature
+- Alarm status
 - Return air humidity and temperature
 - Filter status and other metrics
 
